@@ -193,9 +193,9 @@ const refreshAccesToken = asyncHandler(async(req , res) => {
 
 const changeOldPassword = asyncHandler(async(req , res)=> {
     const {oldPassword , newPassword} = req.body
-    const user = await User.findById(req.user?.userId);
+    const user = await User.findById(req.user?._id).select("+password");
 
-    const isPasswordCorrect = user.isPasswordCorrect(oldPassword);
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
     if(!isPasswordCorrect) {
       throw new ApiError(400 , "Wrong Password");
@@ -208,11 +208,15 @@ const changeOldPassword = asyncHandler(async(req , res)=> {
     .json(new ApiResponse (200 , {} , "Password Changed Succesfully"))
 })
 
-const getCurrentUser = asyncHandler(async(req , res) => {
-  return res
-  .status(200)
-  .json(200 , req.user , "User get Succesfully")
-})
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      req.user,
+      "Current user fetched successfully"
+    )
+  );
+});
 
 const updateAccountDetailes = asyncHandler(async(req , res)=> {
   const {fullName , email} = req.body
@@ -220,7 +224,7 @@ const updateAccountDetailes = asyncHandler(async(req , res)=> {
     throw new ApiError(400 , "Name Or Email Wrong");
   }
 
-  const user = User.findByIdAndUpdate(req.user?._id,
+  const user = await User.findByIdAndUpdate(req.user?._id,
     {
       $set :
        {
